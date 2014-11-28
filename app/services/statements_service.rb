@@ -4,12 +4,16 @@ class StatementsService < ODBCService
     sanitized_sql = sanitize(sql)
     connect do |connection|
       begin 
-        connection.set_option(ODBC::SQL_CURSOR_TYPE, ODBC::SQL_CURSOR_DYNAMIC) if offset
+        connection.set_option(ODBC::SQL_CURSOR_TYPE, ODBC::SQL_CURSOR_DYNAMIC) if offset and limit
         statement = connection.run(sanitized_sql)
-        Rails.logger.debug sanitized_sql
         columns = columns(statement)
         rows = fetch(statement, limit, offset)
-        { records: statement.nrows, fetched: rows.length, columns: columns, rows: rows }
+        records = if statement.nrows == -1
+          rows.length 
+        else
+          statement.nrows
+        end
+        { records: records, fetched: rows.length, columns: columns, rows: rows }
       rescue ODBC::Error => e
         Rails.logger.debug e
         { errors: utf8(e.message) }
@@ -30,13 +34,10 @@ class StatementsService < ODBCService
       rows = []
       return rows if statement.nrows == 0
       if offset and limit
-        ((offset+1)..((offset+limit))).each do |n|
-          row = statement.fetch_scroll(ODBC::SQL_FETCH_ABSOLUTE, n)
+        ((offset+1)..(offset+limit)).each do |index|
+          row = statement.fetch_scroll(ODBC::SQL_FETCH_ABSOLUTE, index)
           rows << row if row
         end
-      elsif offset and limit.nil?
-        rows << statement.fetch_scroll(ODBC::SQL_FETCH_ABSOLUTE, offset+1)
-        statement.fetch_all.each { |row| rows << row.to_a if row }
       else
         rows = statement.each.collect { |row| row.to_a }
       end
