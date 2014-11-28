@@ -1,10 +1,12 @@
 class StatementsService < ODBCService
 
-  def statement(statement, params = {}, limit = nil, offset = nil)
+  def statement(sql, params = {}, limit = nil, offset = nil)
+    sanitized_sql = sanitize(sql)
     connect do |connection|
       begin 
         connection.set_option(ODBC::SQL_CURSOR_TYPE, ODBC::SQL_CURSOR_DYNAMIC) if offset
-        statement = connection.run(statement)
+        statement = connection.run(sanitized_sql)
+        Rails.logger.debug sanitized_sql
         columns = columns(statement)
         rows = fetch(statement, limit, offset)
         { records: statement.nrows, fetched: rows.length, columns: columns, rows: rows }
@@ -19,6 +21,10 @@ class StatementsService < ODBCService
   end
 
   private
+
+    def sanitize(sql)
+      sql.gsub(/(--.*)\n/,"").gsub(/([\n|\t])/,"\s").gsub(/\s+/,"\s").strip
+    end
 
     def fetch(statement, limit = nil, offset = nil)
       rows = []
