@@ -12,3 +12,9 @@ gem 'ruby-odbc', '~> 0.99995', require: 'odbc_utf8'
 
 # Use to provide support for Cross-Origin Resource Sharing (CORS) with Rack
 gem 'rack-cors', :require => 'rack/cors'
+
+# Use ActiveType to make any Ruby object quack like ActiveRecord
+# gem 'active_type'
+
+# Use ActiveModel::Serializers to serialize models
+gem 'active_model_serializers'

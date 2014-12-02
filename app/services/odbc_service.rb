@@ -6,14 +6,20 @@ class ODBCService
   
   protected
 
+    def datasource
+      @datasource
+    end
+
     def connect
       begin
         ODBC::connect(@datasource) do |connection|
           yield connection if block_given?
         end
       rescue ODBC::Error => e
-        Rails.logger.debug e
+        Rails.logger.info e
         {}
+      ensure
+        GC.start 
       end
     end
 

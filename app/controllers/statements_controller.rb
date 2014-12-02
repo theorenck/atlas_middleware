@@ -1,26 +1,25 @@
 class StatementsController < ApplicationController
 
-  before_action :validate
+  before_action :setup, only: :create
 
   def create
-    statement = @service.statement(
-      params[:statement],
-      params[:params],
-      params[:limit],
-      params[:offset]
-    )
-    render json: JSON.fast_generate(statement), status: 200
+    if @service.execute(@statement)
+      render json: @statement, status: 200
+    else
+      render json: {errors: @statement.errors}, status: 422
+    end
   end
 
   private
 
-    def validate
-      unless params[:statement] and /^select\s.*/ =~ params[:statement].downcase.strip
-        render json: {errors: "You need to define a valid SELECT SQL statement" }, status: 422  
-      end
+    def setup
+      @service = StatementService.new
+      @statement = Statement.new(statement_params)
     end
 
-    def setup
-      @service = StatementsService.new
+    def statement_params
+      params.require(:statement).permit(:sql, :limit, :offset).tap do |whitelisted|
+        whitelisted[:params] = params[:statement][:params]
+      end
     end
 end
