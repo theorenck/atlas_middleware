@@ -39,14 +39,14 @@ class Statement < Model
 
   def sanitize
     sql.gsub!(/(--.*)\n/,"")
-    sql.gsub!(/([\n|\t])/,"\s") 
-    sql.gsub!(/\s+/,"\s")
-    sql.strip!
+    # sql.gsub!(/([\n|\t])/,"\s") 
+    # sql.gsub!(/\s+/,"\s")
+    # sql.strip!
   end
 
   def bind_params
-    params.each do |param|
-    	sql.gsub!(/\s(\:#{param[0]})\b/,param[1].to_s)      
+    params.each do |key,value|
+    	sql.gsub!(/(\:#{key})\b/,param[1].to_s)      
     end
   end
 

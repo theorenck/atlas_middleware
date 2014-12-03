@@ -17,9 +17,7 @@ class ODBCService
         end
       rescue ODBC::Error => e
         Rails.logger.info e
-        {}
-      ensure
-        GC.start 
+        {} 
       end
     end
 

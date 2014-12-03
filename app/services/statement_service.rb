@@ -24,8 +24,6 @@ class StatementService < ODBCService
 	  rescue ODBC::Error => e
       statement.errors.add(:base, e.message.force_encoding(Encoding::UTF_8))
       return false
-    ensure
-    	GC.start
     end
 		true
 	end
