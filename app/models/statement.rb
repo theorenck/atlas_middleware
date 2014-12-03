@@ -39,9 +39,9 @@ class Statement < Model
 
   def sanitize
     sql.gsub!(/(--.*)\n/,"")
-    # sql.gsub!(/([\n|\t])/,"\s") 
-    # sql.gsub!(/\s+/,"\s")
-    # sql.strip!
+    sql.gsub!(/([\n|\t])/,"\s") 
+    sql.gsub!(/\s+/,"\s")
+    sql.strip!
   end
 
   def bind_params
