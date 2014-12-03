@@ -1,7 +1,5 @@
 class StatementsController < ApplicationController
 
-  before_action :setup, only: :create
-
   def create
     if @service.execute(@statement)
       render json: @statement, status: 200
