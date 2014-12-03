@@ -46,7 +46,7 @@ class Statement < Model
 
   def bind_params
     params.each do |key,value|
-    	sql.gsub!(/(\:#{key})\b/,param[1].to_s)      
+    	sql.gsub!(/(\:#{key})\b/,value.to_s)      
     end
   end
 
