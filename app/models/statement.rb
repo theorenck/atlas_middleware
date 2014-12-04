@@ -14,7 +14,7 @@ class Statement < Model
 		:message => 'No SQL statement is defined'
 
 	validates_format_of :sql, 
-		:with => /^\s*SELECT\s.*\s*$/i, 
+		:with => /^[\s|\n|\t|\r]*SELECT\b/i, 
 		:multiline => true,
 		:message => 'Only SELECT statements are allowed'  
 
@@ -38,7 +38,7 @@ class Statement < Model
 	end
 
   def sanitize
-    sql.gsub!(/(--.*)\n/,"")
+    sql.gsub!(/(--.*)/,"")
     sql.gsub!(/([\n|\t])/,"\s") 
     sql.gsub!(/\s+/,"\s")
     sql.strip!
@@ -52,8 +52,8 @@ class Statement < Model
 
   def prepare
   	if valid?
+      sanitize
 			bind_params
-			sanitize
 		end
   end
 
