@@ -39,7 +39,7 @@ class StatementService < ODBCService
           rows << translate_row(row) if row
         end
       else
-        rows = statement.each.collect { |row| row.to_a }
+        rows = statement.each.collect { |row| translate_row(row).to_a }
       end
       rows
     end
