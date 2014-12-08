@@ -1,41 +1,41 @@
 class Statement < Model
 
-	attribute :sql
-	attribute :limit
-	attribute :offset
-	attribute :params
+  attribute :sql
+  attribute :limit
+  attribute :offset
+  attribute :params
   
   attribute :records
   attribute :fetched
   attribute :columns
   attribute :rows
 
-	validates_presence_of :sql,
-		:message => 'No SQL statement is defined'
+  validates_presence_of :sql,
+    :message => 'No SQL statement is defined'
 
-	validates_format_of :sql, 
-		:with => /^[\s|\n|\t|\r]*SELECT\b/i, 
-		:multiline => true,
-		:message => 'Only SELECT statements are allowed'  
+  validates_format_of :sql, 
+    :with => /^[\s|\n|\t|\r]*SELECT\b/i, 
+    :multiline => true,
+    :message => 'Only SELECT statements are allowed'  
 
-	validates_presence_of :offset, 
-		:if => :limit?,
-		:message => 'When you define a limit, define also a offset'
+  validates_presence_of :offset, 
+    :if => :limit?,
+    :message => 'When you define a limit, define also a offset'
 
-	validate :validate_params
+  validate :validate_params
 
-	def validate_params
-		sql_params = sql.scan(/\s\:(\w+)\b/).uniq.map {|m| m[0]}
-		sql_params.each do |sql_param|
-			unless params.has_key?(sql_param) and params[sql_param]
-				errors.add(:params, "you must define #{sql_param} in your params list")
-			end
-		end
-	end
+  def validate_params
+    sql_params = sql.scan(/\s\:(\w+)\b/).uniq.map {|m| m[0]}
+    sql_params.each do |sql_param|
+      unless params.has_key?(sql_param) and params[sql_param]
+        errors.add(:params, "you must define #{sql_param} in your params list")
+      end
+    end
+  end
 
-	def paginated?
-		 offset and limit
-	end
+  def paginated?
+     offset and limit
+  end
 
   def sanitize
     sql.gsub!(/(--.*)/,"")
@@ -46,15 +46,14 @@ class Statement < Model
 
   def bind_params
     params.each do |key,value|
-    	sql.gsub!(/(\:#{key})\b/,value.to_s)      
+      sql.gsub!(/(\:#{key})\b/,value.to_s)      
     end
   end
 
   def prepare
-  	if valid?
+    if valid?
       sanitize
-			bind_params
-		end
+      bind_params
+    end
   end
-
 end

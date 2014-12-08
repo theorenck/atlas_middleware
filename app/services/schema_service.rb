@@ -19,7 +19,7 @@ class SchemaService < ODBCService
         Rails.logger.debug error
         {}
       ensure
-        statement.close if statement
+        statement.drop if statement
         connection.disconnect if connection
       end
     end
@@ -35,7 +35,7 @@ class SchemaService < ODBCService
         Rails.logger.debug error
         {}
       ensure
-        statement.close if statement
+        statement.drop if statement
         connection.disconnect if connection
       end
     end
@@ -44,27 +44,27 @@ class SchemaService < ODBCService
   def table(table)
     connect do |connection|
       begin
-        count = count(connection,table)
+        # count = count(connection,table)
         statement = connection.columns(table)
         columns = statement.each_hash.collect do |column|
           {
             name: column['COLUMNNAME'].downcase,
-            type: column['TYPE'],
-            table: column['TABLENAME'].downcase,
-            length: column['LENGTH'],
-            precision: column['PRECISION'],
-            scale: column['SACALE'],
-            nullable: column['NULLABLE'] == 0 ? false : true,
-            typename: column['TYPENAME'],
-            position: column['ORDINAL_POSITION']
+            type: column['TYPE'] # ,
+            # table: column['TABLENAME'].downcase,
+            # length: column['LENGTH'],
+            # precision: column['PRECISION'],
+            # scale: column['SACALE'],
+            # nullable: column['NULLABLE'] == 0 ? false : true,
+            # typename: column['TYPENAME'],
+            # position: column['ORDINAL_POSITION']
           }   
         end
-        { name: table.downcase, records: count, columns: columns }
+        { name: table.downcase, columns: columns }
       rescue ODBC::Error => error
         Rails.logger.debug error
         return {}
       ensure
-        statement.close if statement
+        statement.drop if statement
         connection.disconnect if connection
       end
     end
