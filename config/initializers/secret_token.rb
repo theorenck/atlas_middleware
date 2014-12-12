@@ -16,4 +16,4 @@
 # Using secret_token for rails3 compatibility. Change to secret_key_base
 # to avoid deprecation warning.
 # Can be safely removed in a rails3 api-only application.
-AtlasMiddleware::Application.config.secret_token = 'a05bb8f0e934b0efca26d34bb4beef6a2058349fee46b1a1702720ed5f40b1887eb58aa1c36d149594dfd95dd8a12ba6a310ce1af54f72c79aed106e1f26d750'
+AtlasMiddleware::Application.config.secret_token = '6f94d30778bb67b14339bb550efee0d0c97b72ce07f9ce670dde044b629e283b691cea748a53a724510d0b08e6f25b8f79a911d0a10c77ec0991c480d9e90dce'

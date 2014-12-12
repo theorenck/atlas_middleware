@@ -2,7 +2,7 @@ class StatementsController < ApplicationController
 
   def create
     if @service.execute(@statement)
-      render json: @statement, status: 200
+      render json: JSON.generate(@statement.to_h), status: 200
     else
       render json: {errors: @statement.errors}, status: 422
     end

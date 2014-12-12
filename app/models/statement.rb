@@ -45,8 +45,10 @@ class Statement < Model
   end
 
   def bind_params
-    params.each do |key,value|
-      sql.gsub!(/(\:#{key})\b/,value.to_s)      
+     if params?
+      params.each do |key,value|
+        sql.gsub!(/(\:#{key})\b/,value.to_s)      
+      end
     end
   end
 
@@ -55,5 +57,16 @@ class Statement < Model
       sanitize
       bind_params
     end
+  end
+
+  def to_h
+    { 
+      statement: {
+        records: records,
+        fetched: fetched,
+        columns: columns,
+        rows: rows
+      }
+    }
   end
 end
