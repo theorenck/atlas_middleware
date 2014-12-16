@@ -38,3 +38,6 @@ gem 'rack-cors', :require => 'rack/cors'
 
 # Use ActiveModel::Serializers to serialize models
 gem 'active_model_serializers'
+
+# A fast and very simple Ruby web server
+gem 'thin', '~> 1.6.3'
