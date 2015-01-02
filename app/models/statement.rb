@@ -1,9 +1,10 @@
-class Statement < Model
+class Statement < ActiveType::Object
+  
+  nests_many :parameters
 
   attribute :sql
   attribute :limit
   attribute :offset
-  attribute :params
   
   attribute :records
   attribute :fetched
@@ -22,13 +23,13 @@ class Statement < Model
     :if => :limit?,
     :message => 'When you define a limit, define also a offset'
 
-  validate :validate_params
+  validate :validate_parameters
 
-  def validate_params
-    sql_params = sql.scan(/\s\:(\w+)\b/).uniq.map {|m| m[0]}
-    sql_params.each do |sql_param|
-      unless params.has_key?(sql_param) and params[sql_param]
-        errors.add(:params, "you must define #{sql_param} in your params list")
+  def validate_parameters
+    placeholders = sql.scan(/\s\:(\w+)\b/).uniq.map {|m| m[0]}
+    placeholders.each do |placeholder|
+      unless parameters.select {|p| p.name == placeholder } != []
+        errors.add(:parameters, "you must define #{placeholder} in your parameters list")
       end
     end
   end
@@ -44,10 +45,10 @@ class Statement < Model
     sql.strip!
   end
 
-  def bind_params
-     if params?
-      params.each do |key,value|
-        sql.gsub!(/(\:#{key})\b/,value.to_s)      
+  def bind
+     if parameters?
+      parameters.each do |parameter|
+        sql.gsub!(/(\:#{parameter.name})\b/,parameter.value.to_s)      
       end
     end
   end
@@ -55,8 +56,10 @@ class Statement < Model
   def prepare
     if valid?
       sanitize
-      bind_params
+      bind
     end
+    logger.info "\n  #{Hash[parameters.collect {|e| [e.name, e.value] }]}" if parameters?
+    logger.info "\n  SQL: #{sql}\n"
   end
 
   def to_h

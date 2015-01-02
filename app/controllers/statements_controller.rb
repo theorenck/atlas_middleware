@@ -16,8 +16,21 @@ class StatementsController < ApplicationController
     end
 
     def statement_params
-      params.require(:statement).permit(:sql, :limit, :offset).tap do |whitelisted|
-        whitelisted[:params] = params[:statement][:params]
+      # Extract a helper for *_attributes mapping
+      if parameters = params[:statement][:parameters]
+        params[:statement][:parameters_attributes] = parameters
       end
+      params[:statement].delete(:parameters)
+      params.require(:statement).permit(
+        :sql, 
+        :limit, 
+        :offset,
+        parameters_attributes:[
+          :name,
+          :type,
+          :value,
+          :evaluated
+        ]
+      )
     end
 end
