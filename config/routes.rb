@@ -13,6 +13,9 @@ Rails.application.routes.draw do
   # resource :statements, only: :create
   post 'api/statements/' => 'statements#create'
 
+  # resource :schema, only: :index
+  get 'api/schema/'     => 'schema#index'
+
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
 

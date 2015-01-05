@@ -41,6 +41,27 @@ class SchemaService < ODBCService
     end
   end
 
+  def schema
+    connect do |connection|
+      begin
+        tables = {}
+        statement = connection.columns("")
+        statement.each.map do |c|
+          table = c[2].downcase
+          tables[table] = [] unless tables[table]
+          tables[table] << c[3].downcase
+        end
+        {schema:{tables: tables }}
+      rescue ODBC::Error => error
+        Rails.logger.debug error
+        return {}
+      ensure
+        statement.drop if statement
+        connection.disconnect if connection
+      end
+    end
+  end
+
   def table(table)
     connect do |connection|
       begin
