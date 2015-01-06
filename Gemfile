@@ -1,6 +1,6 @@
 source 'http://rubygems.org'
 
-gem 'rails', '4.1.7'
+gem 'rails', '4.2'
 
 gem 'rails-api', '~> 0.3.1'
 
@@ -16,7 +16,7 @@ gem 'ruby-odbc', '~> 0.99995', require: 'odbc_utf8'
 gem 'rack-cors', '~> 0.2.9', :require => 'rack/cors'
 
 # Use ActiveType to make any Ruby object quack like ActiveRecord
-gem 'active_type'
+gem 'active_type', '~> 0.3.1'
 
 # Use ActiveModel::Serializers to serialize models
 gem 'active_model_serializers', '~> 0.9.2'
