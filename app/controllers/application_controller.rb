@@ -10,5 +10,13 @@ class ApplicationController < ActionController::API
     
     def teardown
       GC.start
-    end  
+    end
+
+    def alias_attributes(params,alias_key)
+      if attributes = params[alias_key]
+        params["#{alias_key}_attributes"] = attributes
+      end
+      params.delete alias_key
+      params
+    end    
 end

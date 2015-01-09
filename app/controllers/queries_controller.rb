@@ -1,4 +1,4 @@
-class StatementsController < ApplicationController
+class QueriesController < ApplicationController
 
   def create
     if @service.execute(@statement)
@@ -16,8 +16,24 @@ class StatementsController < ApplicationController
     end
 
     def statement_params
-      
+
+      if query = params[:query]
+        params[:statement] = query
+      end
+      params.delete(:query)
+      if sql = params[:statement][:statement]
+        params[:statement][:sql] = sql
+      end
+      params[:statement].delete(:statement) 
+
       params[:statement] = alias_attributes(params[:statement],:parameters)
+      
+      params[:statement][:parameters_attributes].each.map do |parameter|
+        if type = parameter[:datatype]
+          parameter[:type] = type
+        end
+        parameter.delete(:datatype)
+      end
 
       params.require(:statement).permit(
         :sql, 

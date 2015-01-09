@@ -13,6 +13,9 @@ Rails.application.routes.draw do
   # resource :statements, only: :create
   post 'api/statements/' => 'statements#create'
 
+  # resource :queries, only: :create
+  post 'api/queries/' => 'queries#create'
+
   # resource :schema, only: :index
   get 'api/schema/'     => 'schema#index'
 
