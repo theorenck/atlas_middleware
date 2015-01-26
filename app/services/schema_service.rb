@@ -1,5 +1,21 @@
 class SchemaService < ODBCService
 
+  def indexes(table)
+    connect do |connection|
+      begin
+        statement = connection.indexes(table)
+        indexes = statement.each_hash
+        { indexes: indexes.group_by{|h| h["INDEXNAME"]} }
+      rescue ODBC::Error => e
+        Rails.logger.debug error
+        {}
+      ensure
+        statement.drop if statement
+        connection.disconnect if connection
+      end
+    end
+  end
+
   def types
     connect do |connection|
       begin

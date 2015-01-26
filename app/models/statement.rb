@@ -14,16 +14,20 @@ class Statement < ActiveType::Object
   validates_presence_of :sql,
     :message => 'No SQL statement is defined'
 
-  validates_format_of :sql, 
-    :with => /^[\s|\n|\t|\r]*SELECT\b/i, 
-    :multiline => true,
-    :message => 'Only SELECT statements are allowed'  
+  # validates_format_of :sql, 
+  #   :with => /^[\s|\n|\t|\r]*SELECT\b/i, 
+  #   :multiline => true,
+  #   :message => 'Only SELECT statements are allowed'  
 
-  validates_presence_of :offset, 
-    :if => :limit?,
-    :message => 'When you define a limit, define also a offset'
+  validates_presence_of :limit, 
+    :if => :offset?,
+    :message => 'When you define a offset, you must first define a limit'
 
   validate :validate_parameters
+
+  before_validation :set_limit
+
+  after_validation :prepare
 
   def validate_parameters
     placeholders = sql.scan(/\s\:(\w+)\b/).uniq.map {|m| m[0]}
@@ -53,23 +57,43 @@ class Statement < ActiveType::Object
     end
   end
 
+  def scroll_indexes
+    ((offset+1)..(offset+limit))
+  end
+
   def prepare
-    if valid?
-      sanitize
-      bind
-    end
-    logger.info "\n  #{Hash[parameters.collect {|e| [e.name, e.value] }]}" if parameters?
-    logger.info "\n  SQL: #{sql}\n"
+    sanitize
+    bind
   end
 
   def to_h
     { 
-      statement: {
+      result: {
         records: records,
         fetched: fetched,
-        columns: columns,
-        rows: rows
+        columns: columns || [],
+        rows: rows || []
       }
     }
   end
+
+  protected
+  
+    def set_limit
+      if limit_clause
+        limit = limit_clause.scan(/LIMIT\s+(\d+|all).*/i).try(:first).try(:first)
+        if 'ALL'.casecmp(limit) == 0
+          self.limit = Float::INFINITY
+        else
+          self.limit = limit.to_i
+        end
+        offset = limit_clause.scan(/LIMIT\s+(?:\d+|all)\s+OFFSET\s+(\d+)/i).try(:first).try(:first)
+        self.offset = offset.to_i
+      end
+      sql.gsub!(/\b(LIMIT\b.*)/i,"")
+    end
+
+    def limit_clause
+      @limit_clause ||= sql.scan(/\b(LIMIT\b.*)/i).try(:first).try(:first)
+    end
 end

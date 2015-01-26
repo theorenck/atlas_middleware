@@ -16,6 +16,9 @@ Rails.application.routes.draw do
   # resource :queries, only: :create
   post 'api/queries/' => 'queries#create'
 
+  # resource :aggregations, only: :create
+  post 'api/aggregations/' => 'aggregations#create'
+
   # resource :schema, only: :index
   get 'api/schema/'     => 'schema#index'
 

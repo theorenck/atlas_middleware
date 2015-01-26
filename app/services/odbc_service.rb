@@ -20,18 +20,5 @@ class ODBCService
         {} 
       end
     end
-
-  protected
-
-    def count(connection,table)
-      begin
-        statement = connection.run("SELECT COUNT(*) FROM #{table}")
-        statement.first.first
-      rescue ODBC::Error => error
-        Rails.logger.debug error
-        return 0
-      ensure
-        statement.drop if statement
-      end
-    end
+    
 end

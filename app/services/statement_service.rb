@@ -1,28 +1,36 @@
 class StatementService < ODBCService
     
-  def execute(statement)
-    unless statement.valid?
-      return false
-    end
+  def execute(model)
+    
+    return false unless model.valid?
+
     begin
       ODBC::connect(datasource) do |connection|
-        statement.prepare
         begin
-          if statement.paginated? && defined? ODBC 
-            connection.set_option(ODBC::SQL_CURSOR_TYPE, ODBC::SQL_CURSOR_DYNAMIC)
+          statement = connection.newstmt
+          if model.paginated? && defined? ODBC 
+            statement.set_option(ODBC::SQL_CURSOR_TYPE, ODBC::SQL_CURSOR_DYNAMIC)
           end
-          result = connection.run(statement.sql)      
-          statement.columns = get_columns(result)
-          statement.rows = fetch(result, statement.limit, statement.offset)
-          statement.fetched = statement.rows.length
-          statement.records = result.nrows == -1 ? statement.rows.length : result.nrows
+          statement.prepare(model.sql)
+          time = Benchmark.measure do
+            statement.execute
+          end
+          if statement.ncols > 0
+            fetch(statement, model)
+            model.fetched = model.rows.length
+            model.columns = columns(statement)
+            model.records = statement.nrows == -1 ? model.rows.length : statement.nrows
+          end
+          model.records = statement.nrows == -1 ? model.rows.length : statement.nrows
+          log_sql(model.sql, time)
         ensure
-          result.drop if result
+          statement.drop if statement
           connection.disconnect if connection
         end
       end
     rescue ODBC::Error => e
-      statement.errors.add(:base, e.message.force_encoding(Encoding::UTF_8))
+      Rails.logger.info e.message
+      model.errors.add(:base, e.message.force_encoding(Encoding::UTF_8))
       return false
     end
     true
@@ -30,40 +38,37 @@ class StatementService < ODBCService
 
   private
 
-    def fetch(statement, limit = nil, offset = nil)
-      rows = []
+    def fetch(statement, model)
       return rows if statement.nrows == 0
-      if offset and limit
-        ((offset+1)..(offset+limit)).each do |index|
+      model.rows = []
+      if model.paginated?
+        model.scroll_indexes.each do |index|
           row = statement.fetch_scroll(ODBC::SQL_FETCH_ABSOLUTE, index)
-          rows << translate_row(row) if row
+          break unless row
+          model.rows << row
         end
       else
-        rows = statement.each.collect { |row| translate_row(row).to_a }
+        model.rows = statement.fetch_all
       end
-      rows
+      model.rows
     end
 
-    def translate_row(row)
-      row.each_with_index do |field,i|
-        if field.is_a? ODBC::Date
-          row[i] = field.to_s
-        end 
-      end
-      row
-    end
-
-    def get_columns(statement)
+    def columns(statement)
       statement.columns(true).collect do |c| 
         {
           name:c.name.downcase, 
-          type:c.type #,
-          # table: c.table.downcase,
-          # length: c.length,
-          # precision: c.precision,
-          # scale: c.scale,
-          # nullable: c.nullable
+          type:c.type,
+          table: c.table.downcase,
+          length: c.length,
+          precision: c.precision,
+          scale: c.scale,
+          nullable: c.nullable
         }
       end
     end
+
+    def log_sql(sql,time)
+      Rails.logger.info "\n \033[35m\033[1mSQL(#{time.real}s)\033[0m \033[1m#{sql}\033[0m\n" 
+    end
+
 end
