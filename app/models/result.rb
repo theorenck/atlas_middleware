@@ -1,4 +1,4 @@
-class ResultSet < ActiveType::Object
+class Result < ActiveType::Object
   
   attribute :records
   attribute :fetched
@@ -10,8 +10,8 @@ class ResultSet < ActiveType::Object
       result: {
         records: records,
         fetched: fetched,
-        columns: columns,
-        rows: rows
+        columns: columns || [],
+        rows: rows || []
       }
     }
   end

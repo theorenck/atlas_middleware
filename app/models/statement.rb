@@ -46,6 +46,7 @@ class Statement < ActiveType::Object
     sql.gsub!(/(--.*)/,"")
     sql.gsub!(/([\n|\t])/,"\s") 
     sql.gsub!(/\s+/,"\s")
+    fix_time_functions
     sql.strip!
   end
 
@@ -78,7 +79,27 @@ class Statement < ActiveType::Object
   end
 
   protected
-  
+
+    def fix_time_functions()
+      p sql
+      fix_curdate
+      fix_curtime
+      fix_curtimestamp
+      p sql
+    end
+
+    def fix_curdate()
+      sql.gsub!(/(\{\s*fn\s+(?:curdate|current_date)\s*\(\s*\)\s*\})/i,"{D '#{Time.now.strftime '%Y-%m-%d'}'}")
+    end
+
+    def fix_curtime()
+      sql.gsub!(/(\{\s*fn\s+(?:curtime|current_time)\s*\(\s*\)\s*\})/i,"{T '#{Time.now.strftime '%H:%M:%S'}'}")
+    end
+
+    def fix_curtimestamp()
+      sql.gsub!(/(\{\s*fn\s+(?:curtimestamp|current_timestamp)\s*\(\s*\)\s*\})/i,"{TS '#{Time.now.strftime '%Y-%m-%d %H:%M:%S'}'}")
+    end
+
     def set_limit
       if limit_clause
         limit = limit_clause.scan(/LIMIT\s+(\d+|all).*/i).try(:first).try(:first)

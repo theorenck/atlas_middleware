@@ -15,13 +15,15 @@ class StatementService < ODBCService
           time = Benchmark.measure do
             statement.execute
           end
+          model.rows = []
           if statement.ncols > 0
             fetch(statement, model)
             model.fetched = model.rows.length
             model.columns = columns(statement)
             model.records = statement.nrows == -1 ? model.rows.length : statement.nrows
+          else
+            model.records = statement.nrows
           end
-          model.records = statement.nrows == -1 ? model.rows.length : statement.nrows
           log_sql(model.sql, time)
         ensure
           statement.drop if statement
@@ -39,18 +41,18 @@ class StatementService < ODBCService
   private
 
     def fetch(statement, model)
-      return rows if statement.nrows == 0
-      model.rows = []
-      if model.paginated?
-        model.scroll_indexes.each do |index|
-          row = statement.fetch_scroll(ODBC::SQL_FETCH_ABSOLUTE, index)
-          break unless row
-          model.rows << row
+      unless statement.nrows == 0
+        if model.paginated?
+          model.scroll_indexes.each do |index|
+            row = statement.fetch_scroll(ODBC::SQL_FETCH_ABSOLUTE, index)
+            break unless row
+            model.rows << row
+          end
+        else
+          model.rows = statement.fetch_all
         end
-      else
-        model.rows = statement.fetch_all
       end
-      model.rows
+      model.rows 
     end
 
     def columns(statement)
