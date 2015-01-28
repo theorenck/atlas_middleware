@@ -81,11 +81,9 @@ class Statement < ActiveType::Object
   protected
 
     def fix_time_functions()
-      p sql
       fix_curdate
       fix_curtime
       fix_curtimestamp
-      p sql
     end
 
     def fix_curdate()

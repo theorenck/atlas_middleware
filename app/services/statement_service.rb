@@ -8,22 +8,24 @@ class StatementService < ODBCService
       ODBC::connect(datasource) do |connection|
         begin
           statement = connection.newstmt
-          if model.paginated? && defined? ODBC 
-            statement.set_option(ODBC::SQL_CURSOR_TYPE, ODBC::SQL_CURSOR_DYNAMIC)
+          if model.paginated? && defined?(ODBC) && model.offset != 0
+            statement.set_option(ODBC::SQL_CURSOR_TYPE, ODBC::SQL_CURSOR_STATIC)
           end
           statement.prepare(model.sql)
           time = Benchmark.measure do
             statement.execute
           end
-          model.rows = []
+          puts "(#{time.real}s)"
           if statement.ncols > 0
-            fetch(statement, model)
+            fetch_time = Benchmark.measure do
+              fetch(statement, model)
+            end
+            puts "(#{fetch_time.real}s)"
             model.fetched = model.rows.length
             model.columns = columns(statement)
             model.records = statement.nrows == -1 ? model.rows.length : statement.nrows
-          else
-            model.records = statement.nrows
           end
+          model.records = statement.nrows
           log_sql(model.sql, time)
         ensure
           statement.drop if statement
@@ -41,18 +43,26 @@ class StatementService < ODBCService
   private
 
     def fetch(statement, model)
+      model.rows = []
       unless statement.nrows == 0
         if model.paginated?
-          model.scroll_indexes.each do |index|
-            row = statement.fetch_scroll(ODBC::SQL_FETCH_ABSOLUTE, index)
-            break unless row
-            model.rows << row
+          # (0..model.offset).each do
+          #   statement.fetch
+          # end
+          if model.offset > 0
+            statement.fetch_scroll(ODBC::SQL_FETCH_ABSOLUTE, model.offset)
           end
+          model.rows = model.limit > 0 ? statement.fetch_many(model.limit) : statement.fetch_all
+         # (2..102).each do |index|
+         #    row = statement.fetch_scroll(ODBC::SQL_FETCH_RELATIVE,index)
+         #    break unless row
+         #    model.rows << row
+         #  end
         else
-          model.rows = statement.fetch_all
+          model.rows = statement.fetch_all || []
         end
       end
-      model.rows 
+      model.rows
     end
 
     def columns(statement)
