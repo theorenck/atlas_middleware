@@ -15,18 +15,15 @@ class StatementService < ODBCService
           time = Benchmark.measure do
             statement.execute
           end
-          puts "(#{time.real}s)"
-          if statement.ncols > 0
-            fetch_time = Benchmark.measure do
-              fetch(statement, model)
-            end
-            puts "(#{fetch_time.real}s)"
-            model.fetched = model.rows.length
-            model.columns = columns(statement)
-            model.records = statement.nrows == -1 ? model.rows.length : statement.nrows
-          end
-          model.records = statement.nrows
           log_sql(model.sql, time)
+          if statement.ncols > 0
+            time = Benchmark.measure do
+              model.fetch statement
+            end
+            p "(#{time.real}s)" 
+          else
+            model.records = statement.nrows
+          end
         ensure
           statement.drop if statement
           connection.disconnect if connection
@@ -42,45 +39,8 @@ class StatementService < ODBCService
 
   private
 
-    def fetch(statement, model)
-      model.rows = []
-      unless statement.nrows == 0
-        if model.paginated?
-          # (0..model.offset).each do
-          #   statement.fetch
-          # end
-          if model.offset > 0
-            statement.fetch_scroll(ODBC::SQL_FETCH_ABSOLUTE, model.offset)
-          end
-          model.rows = model.limit > 0 ? statement.fetch_many(model.limit) : statement.fetch_all
-         # (2..102).each do |index|
-         #    row = statement.fetch_scroll(ODBC::SQL_FETCH_RELATIVE,index)
-         #    break unless row
-         #    model.rows << row
-         #  end
-        else
-          model.rows = statement.fetch_all || []
-        end
-      end
-      model.rows
-    end
-
-    def columns(statement)
-      statement.columns(true).collect do |c| 
-        {
-          name:c.name.downcase, 
-          type:c.type,
-          table: c.table.downcase,
-          length: c.length,
-          precision: c.precision,
-          scale: c.scale,
-          nullable: c.nullable
-        }
-      end
-    end
-
     def log_sql(sql,time)
-      Rails.logger.info "\n \033[35m\033[1mSQL(#{time.real}s)\033[0m \033[1m#{sql}\033[0m\n" 
+      Rails.logger.info "\n \033[35m\033[1mSQL (#{time.real}s)\033[0m \033[1m#{sql}\033[0m\n" 
     end
 
 end

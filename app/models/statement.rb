@@ -25,8 +25,6 @@ class Statement < ActiveType::Object
 
   validate :validate_parameters
 
-  before_validation :set_limit
-
   after_validation :prepare
 
   def validate_parameters
@@ -65,6 +63,7 @@ class Statement < ActiveType::Object
   def prepare
     sanitize
     bind
+    set_limit
   end
 
   def to_h
@@ -76,6 +75,38 @@ class Statement < ActiveType::Object
         rows: rows || []
       }
     }
+  end
+
+  def fetch(statement)
+    self.columns = statement.columns(true).collect do |c| 
+      {
+        name:c.name.downcase, 
+        type:c.type,
+        table: c.table.downcase,
+        length: c.length,
+        precision: c.precision,
+        scale: c.scale,
+        nullable: c.nullable
+      }
+    end
+    self.rows = []
+    if paginated?
+      if offset > 0
+        statement.fetch_scroll ODBC::SQL_FETCH_ABSOLUTE, offset
+        self.records = statement.nrows
+      end
+      if limit > 0
+        self.rows = statement.fetch_many limit
+        self.records = rows.length
+      else 
+       self.rows = statement.fetch_all || []
+       self.records = offset + row.length
+      end
+    else
+      self.rows = statement.fetch_all || []
+      self.records = rows.length
+    end
+    self.fetched = rows.length
   end
 
   protected
